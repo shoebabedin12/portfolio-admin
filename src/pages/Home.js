@@ -1,4 +1,5 @@
 import axios from "axios";
+import moment from 'moment';
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { LoginUser } from "../feature/users/authSlice";
@@ -9,7 +10,7 @@ const Home = () => {
   const users = useSelector((state) => state.login.userLogin);
   const [modalOpen, setModalOpen] = useState(false);
   const [inputs, setInputs] = useState({});
-  const [checked, setChecked] = useState(false); 
+  const [checked, setChecked] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isEditMode2, setIsEditMode2] = useState(false);
   const [userDetails, setUserDetails] = useState({
@@ -17,11 +18,11 @@ const Home = () => {
     profession: "",
     email: "",
     phone: "",
-    address: "",
+    address: ""
   });
   const [userDetails2, setUserDetails2] = useState({
     profile_img: null,
-    description: "",
+    description: ""
   });
 
   useEffect(() => {
@@ -66,7 +67,7 @@ const Home = () => {
     const { name, value } = e.target;
     setUserDetails((prevDetails) => ({
       ...prevDetails,
-      [name]: value,
+      [name]: value
     }));
   };
 
@@ -75,12 +76,12 @@ const Home = () => {
     if (name === "profile_img" && files.length > 0) {
       setUserDetails2((prevDetails) => ({
         ...prevDetails,
-        profile_img: files[0],
+        profile_img: files[0]
       }));
     } else {
       setUserDetails2((prevDetails) => ({
         ...prevDetails,
-        [name]: value,
+        [name]: value
       }));
     }
   };
@@ -90,13 +91,13 @@ const Home = () => {
       const formData = new FormData();
       formData.append("profile_img", userDetails2.profile_img);
       formData.append("description", userDetails2.description);
-      formData.append("_id", users.user._id);
+      formData.append("_id", users?.user?._id);
 
       try {
         const response = await axios.post(`${url}/update-user-info`, formData, {
           headers: {
-            "Content-Type": "multipart/form-data",
-          },
+            "Content-Type": "multipart/form-data"
+          }
         });
         const data = response.data;
         if (data.success) {
@@ -130,38 +131,70 @@ const Home = () => {
     }
   }, [modalOpen]);
 
-
   const companyHandleChange = (event) => {
     const { name, value, type, checked: isChecked } = event.target;
-    
-    if (type === 'checkbox') {
+
+    if (type === "checkbox") {
       setChecked(isChecked);
       if (isChecked) {
-        setInputs(values => ({ ...values, leave_date: 'continued' }));
+        setInputs((values) => ({ ...values, leave_date: "continued" }));
       } else {
-        setInputs(values => {
+        setInputs((values) => {
           const newValues = { ...values };
           delete newValues.leave_date; // Remove leave_date when checkbox is unchecked
           return newValues;
         });
       }
     } else {
-      setInputs(values => ({ ...values, [name]: value }));
+      setInputs((values) => ({ ...values, [name]: value }));
     }
-  }
+  };
 
   const companyHandler = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(`${url}/add-experience`, {
         ...inputs,
-        userId: users.user._id  // Include userId in the request body
-      });      
+        userId: users?.user?._id // Include userId in the request body
+      });
       const data = response.data;
       console.log(data);
       if (data.success) {
         setInputs({});
         setChecked(false);
+        localStorage.setItem("User", JSON.stringify(data));
+        dispatch(LoginUser(data));
+      } else {
+        console.error("Error updating user:", data.message);
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error(
+          "Server Error:",
+          error.response.status,
+          error.response.data
+        );
+      } else if (error.request) {
+        console.error("Network Error: No response received", error.request);
+      } else {
+        console.error("Error:", error.message);
+      }
+    }
+  };
+
+  const deleteExperience = async(descriptionId) => {
+    try {
+      const response = await axios.post(`${url}/delete-experience`, {
+        descriptionId,
+        userId: users?.user?._id // Include userId in the request body
+      });
+      const data = response.data;
+      console.log(data);
+      if (data.success) {
+        setInputs({});
+        setChecked(false);
+        localStorage.setItem("User", JSON.stringify(data));
+        dispatch(LoginUser(data));
       } else {
         console.error("Error updating user:", data.message);
       }
@@ -179,6 +212,7 @@ const Home = () => {
       }
     }
   }
+
 
   return (
     <>
@@ -251,14 +285,14 @@ const Home = () => {
                   ) : (
                     <img
                       className="h-auto w-full mx-auto"
-                      src={userDetails2.profile_img}
+                      src={userDetails2?.profile_img}
                       alt=""
                     />
                   )}
-                  {users.user.profile_img && (
+                  {users?.user?.profile_img && (
                     <div className="h-[200px] w-[200px] rounded-full overflow-hidden mx-[auto] mb-[30px]">
                       <img
-                        src={`${url}/${users.user.profile_img}`}
+                        src={`${url}/${users?.user?.profile_img}`}
                         alt="Profile Preview"
                       />
                     </div>
@@ -277,7 +311,7 @@ const Home = () => {
                       className="border rounded px-2 py-1"
                     />
                   ) : (
-                    users.user.description
+                    users?.user.description
                   )}
                 </p>
               </form>
@@ -461,20 +495,32 @@ const Home = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="flex items-center justify-between space-x-2 font-semibold text-gray-900 leading-8 mb-3">
-                      <span className="flex items-center">
+                      <span className="flex items-center gap-2">
                         <span clas="text-green-500">
                           <svg
-                            className="h-5"
+                            version="1.1"
+                            id="Uploaded to svgrepo.com"
                             xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                            width="15px"
+                            height="15px"
+                            viewBox="0 0 32 32"
                           >
                             <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              className="blueprint_een"
+                              d="M6.5,17h9.55c0.245,1.694,1.688,3,3.45,3s3.205-1.306,3.45-3h2.55c1.223,0,2.239-0.884,2.454-2.046
+	C29.67,14.729,31,13.277,31,11.5s-1.33-3.229-3.046-3.454C27.739,6.884,26.723,6,25.5,6h-6.55c-0.245-1.694-1.688-3-3.45-3
+	s-3.205,1.306-3.45,3H9.95C9.705,4.306,8.262,3,6.5,3C4.567,3,3,4.567,3,6.5S4.567,10,6.5,10c1.762,0,3.205-1.306,3.45-3h2.101
+	c0.245,1.694,1.688,3,3.45,3s3.205-1.306,3.45-3h6.55c0.672,0,1.236,0.447,1.426,1.058C25.268,8.333,24,9.764,24,11.5
+	s1.268,3.167,2.926,3.442C26.736,15.553,26.172,16,25.5,16h-2.55c-0.245-1.694-1.688-3-3.45-3s-3.205,1.306-3.45,3H6.5
+	c-1.223,0-2.239,0.884-2.454,2.046C2.33,18.271,1,19.723,1,21.5s1.33,3.229,3.046,3.454C4.261,26.116,5.277,27,6.5,27h2.55
+	c0.245,1.694,1.688,3,3.45,3s3.205-1.306,3.45-3h6.101c0.245,1.694,1.688,3,3.45,3c1.933,0,3.5-1.567,3.5-3.5S27.433,23,25.5,23
+	c-1.762,0-3.205,1.306-3.45,3H15.95c-0.245-1.694-1.688-3-3.45-3s-3.205,1.306-3.45,3H6.5c-0.672,0-1.236-0.447-1.426-1.058
+	C6.732,24.667,8,23.236,8,21.5s-1.268-3.167-2.926-3.442C5.264,17.447,5.828,17,6.5,17z M6.5,8C5.673,8,5,7.327,5,6.5S5.673,5,6.5,5
+	S8,5.673,8,6.5S7.327,8,6.5,8z M15.5,8C14.673,8,14,7.327,14,6.5S14.673,5,15.5,5S17,5.673,17,6.5S16.327,8,15.5,8z M26,11.5
+	c0-0.827,0.673-1.5,1.5-1.5s1.5,0.673,1.5,1.5S28.327,13,27.5,13S26,12.327,26,11.5z M19.5,15c0.827,0,1.5,0.673,1.5,1.5
+	S20.327,18,19.5,18S18,17.327,18,16.5S18.673,15,19.5,15z M25.5,25c0.827,0,1.5,0.673,1.5,1.5S26.327,28,25.5,28S24,27.327,24,26.5
+	S24.673,25,25.5,25z M12.5,25c0.827,0,1.5,0.673,1.5,1.5S13.327,28,12.5,28S11,27.327,11,26.5S11.673,25,12.5,25z M6,21.5
+	C6,22.327,5.327,23,4.5,23S3,22.327,3,21.5S3.673,20,4.5,20S6,20.673,6,21.5z"
                             />
                           </svg>
                         </span>
@@ -513,66 +559,127 @@ const Home = () => {
                       </button>
                     </div>
                     <ul className="list-inside space-y-2">
-                      <li>
-                        <div className="flex items-center justify-between">
-                          <span className="text-teal-600">
-                            Owner at Her Company Inc.
-                          </span>
-                          <button
-                            className="mb-4 px-4 py-1 bg-white rounded text-base"
-                            // onClick={handleEditClick2}
-                          >
-                            {isEditMode ? (
-                              <svg
-                                width="20px"
-                                height="20px"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
+                      {users?.user.experience.map((item) => (
+                        <li
+                          Key={item._id}
+                          className="mb-2 border-b pb-2 last:border-0"
+                        >
+                          <div className="flex items-center justify-between ">
+                            <span className="flex flex-col">
+                              <span className="text-teal-600">
+                                {item.company_name}
+                              </span>
+                              <span className="text-black">
+                                {item.designation}
+                              </span>
+                            </span>
+                            <div>
+                              <button
+                                className="mb-4 px-4 py-1 bg-white rounded text-base"
+                                onClick={() => console.log(item)}
                               >
-                                <path
-                                  d="M17 20.75H7C6.27065 20.75 5.57118 20.4603 5.05546 19.9445C4.53973 19.4288 4.25 18.7293 4.25 18V6C4.25 5.27065 4.53973 4.57118 5.05546 4.05546C5.57118 3.53973 6.27065 3.25 7 3.25H14.5C14.6988 3.25018 14.8895 3.32931 15.03 3.47L19.53 8C19.6707 8.14052 19.7498 8.33115 19.75 8.53V18C19.75 18.7293 19.4603 19.4288 18.9445 19.9445C18.4288 20.4603 17.7293 20.75 17 20.75ZM7 4.75C6.66848 4.75 6.35054 4.8817 6.11612 5.11612C5.8817 5.35054 5.75 5.66848 5.75 6V18C5.75 18.3315 5.8817 18.6495 6.11612 18.8839C6.35054 19.1183 6.66848 19.25 7 19.25H17C17.3315 19.25 17.6495 19.1183 17.8839 18.8839C18.1183 18.6495 18.25 18.3315 18.25 18V8.81L14.19 4.75H7Z"
-                                  fill="#000000"
-                                />
-                                <path
-                                  d="M16.75 20H15.25V13.75H8.75V20H7.25V13.5C7.25 13.1685 7.3817 12.8505 7.61612 12.6161C7.85054 12.3817 8.16848 12.25 8.5 12.25H15.5C15.8315 12.25 16.1495 12.3817 16.3839 12.6161C16.6183 12.8505 16.75 13.1685 16.75 13.5V20Z"
-                                  fill="#000000"
-                                />
-                                <path
-                                  d="M12.47 8.75H8.53001C8.3606 8.74869 8.19311 8.71403 8.0371 8.64799C7.88109 8.58195 7.73962 8.48582 7.62076 8.36511C7.5019 8.24439 7.40798 8.10144 7.34437 7.94443C7.28075 7.78741 7.24869 7.61941 7.25001 7.45V4H8.75001V7.25H12.25V4H13.75V7.45C13.7513 7.61941 13.7193 7.78741 13.6557 7.94443C13.592 8.10144 13.4981 8.24439 13.3793 8.36511C13.2604 8.48582 13.1189 8.58195 12.9629 8.64799C12.8069 8.71403 12.6394 8.74869 12.47 8.75Z"
-                                  fill="#000000"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                width="20px"
-                                height="20px"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
+                                {isEditMode ? (
+                                  <svg
+                                    width="20px"
+                                    height="20px"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M17 20.75H7C6.27065 20.75 5.57118 20.4603 5.05546 19.9445C4.53973 19.4288 4.25 18.7293 4.25 18V6C4.25 5.27065 4.53973 4.57118 5.05546 4.05546C5.57118 3.53973 6.27065 3.25 7 3.25H14.5C14.6988 3.25018 14.8895 3.32931 15.03 3.47L19.53 8C19.6707 8.14052 19.7498 8.33115 19.75 8.53V18C19.75 18.7293 19.4603 19.4288 18.9445 19.9445C18.4288 20.4603 17.7293 20.75 17 20.75ZM7 4.75C6.66848 4.75 6.35054 4.8817 6.11612 5.11612C5.8817 5.35054 5.75 5.66848 5.75 6V18C5.75 18.3315 5.8817 18.6495 6.11612 18.8839C6.35054 19.1183 6.66848 19.25 7 19.25H17C17.3315 19.25 17.6495 19.1183 17.8839 18.8839C18.1183 18.6495 18.25 18.3315 18.25 18V8.81L14.19 4.75H7Z"
+                                      fill="#000000"
+                                    />
+                                    <path
+                                      d="M16.75 20H15.25V13.75H8.75V20H7.25V13.5C7.25 13.1685 7.3817 12.8505 7.61612 12.6161C7.85054 12.3817 8.16848 12.25 8.5 12.25H15.5C15.8315 12.25 16.1495 12.3817 16.3839 12.6161C16.6183 12.8505 16.75 13.1685 16.75 13.5V20Z"
+                                      fill="#000000"
+                                    />
+                                    <path
+                                      d="M12.47 8.75H8.53001C8.3606 8.74869 8.19311 8.71403 8.0371 8.64799C7.88109 8.58195 7.73962 8.48582 7.62076 8.36511C7.5019 8.24439 7.40798 8.10144 7.34437 7.94443C7.28075 7.78741 7.24869 7.61941 7.25001 7.45V4H8.75001V7.25H12.25V4H13.75V7.45C13.7513 7.61941 13.7193 7.78741 13.6557 7.94443C13.592 8.10144 13.4981 8.24439 13.3793 8.36511C13.2604 8.48582 13.1189 8.58195 12.9629 8.64799C12.8069 8.71403 12.6394 8.74869 12.47 8.75Z"
+                                      fill="#000000"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    width="20px"
+                                    height="20px"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z"
+                                      stroke="#000000"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13"
+                                      stroke="#000000"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                              <button
+                                className="mb-4 px-4 py-1 bg-white rounded text-base"
+                                onClick={() => deleteExperience(item._id)}
                               >
-                                <path
-                                  d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z"
-                                  stroke="#000000"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13"
-                                  stroke="#000000"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          March 2020 - Now
-                        </div>
-                      </li>
+                                <svg
+                                  width="20px"
+                                  height="20px"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M10 12V17"
+                                    stroke="#000000"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M14 12V17"
+                                    stroke="#000000"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M4 7H20"
+                                    stroke="#000000"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M6 10V18C6 19.6569 7.34315 21 9 21H15C16.6569 21 18 19.6569 18 18V10"
+                                    stroke="#000000"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z"
+                                    stroke="#000000"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-gray-500 text-xs capitalize">
+                            {/* {item.join_date} - {item.leave_date} */}
+                            {moment(item.join_date).format("DD.MM.YYYY")} - {item.leave_date !== 'continued' ? moment(item.leave_date).format("DD.MM.YYYY") : item.leave_date}
+                          </div>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                   <div>
@@ -681,95 +788,94 @@ const Home = () => {
       </div>
 
       <div
-      className={`fixed top-0 left-0 bg-black/60 w-full min-h-screen overflow-hidden overflow-y-auto flex items-center justify-center ${
-        modalOpen
-          ? 'opacity-100 visible z-10 transition duration-1000 ease-linear'
-          : 'opacity-0 invisible -z-10 transition ease-in duration-500'
-      }`}
-    >
-      <div className="max-w-[600px] w-full h-auto bg-white shadow-sm shadow-white py-2 px-4 rounded-lg">
-        <div className="header flex items-center justify-between border-b-[1px] mb-2 py-1">
-          <h2>Add Job Experience</h2>
-          <button onClick={() => setModalOpen(false)}>
-            <svg
-              width="20px"
-              height="20px"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM8.96963 8.96965C9.26252 8.67676 9.73739 8.67676 10.0303 8.96965L12 10.9393L13.9696 8.96967C14.2625 8.67678 14.7374 8.67678 15.0303 8.96967C15.3232 9.26256 15.3232 9.73744 15.0303 10.0303L13.0606 12L15.0303 13.9696C15.3232 14.2625 15.3232 14.7374 15.0303 15.0303C14.7374 15.3232 14.2625 15.3232 13.9696 15.0303L12 13.0607L10.0303 15.0303C9.73742 15.3232 9.26254 15.3232 8.96965 15.0303C8.67676 14.7374 8.67676 14.2625 8.96965 13.9697L10.9393 12L8.96963 10.0303C8.67673 9.73742 8.67673 9.26254 8.96963 8.96965Z"
-                fill="#1C274C"
-              />
-            </svg>
-          </button>
-        </div>
-        <div className="content">
-          <form onSubmit={companyHandler}>
-            <div className="flex flex-col border-b-[1px] py-2">
-              <label>Company Name</label>
-              <input
-                className="border-0 outline-none shadow-none"
-                type="text"
-                name="company_name"
-                placeholder="type your company name"
-                value={inputs.company_name || ""} 
-                onChange={companyHandleChange}
-              />
-            </div>
-            <div className="flex flex-col border-b-[1px] py-2">
-              <label>Designation</label>
-              <input
-                className="border-0 outline-none shadow-none"
-                type="text"
-                name="designation"
-                placeholder="type your designation here"
-                value={inputs.designation || ""} 
-                onChange={companyHandleChange}
-              />
-            </div>
-            <div className="flex flex-col border-b-[1px] py-2">
-              <label>Join Date</label>
-              <input
-                className="border-0 outline-none shadow-none"
-                type="date"
-                name="join_date"
-                value={inputs.join_date || ""} 
-                onChange={companyHandleChange}
-              />
-            </div>
-       
-            <div className="flex flex-col border-b-[1px] py-2">
-        <label>Leave Date</label>
-        <input
-          className="border-0 outline-none shadow-none"
-          type={checked ? 'text' : 'date'}
-          name="leave_date"
-          value={checked ? 'continue' : inputs.leave_date || ""} 
-          onChange={companyHandleChange}
-          disabled={checked}
-        />
-      </div>
-      <div className="flex flex-col items-start justify-start border-b-[1px] py-2">
-        <label>Continue</label>
-        <input
-          className="border-0 outline-none shadow-none"
-          type="checkbox"
-          name="continue"
-          checked={checked}
-          onChange={companyHandleChange}
-        />
-      </div>
-            <button type="submit">
-              Submit
+        className={`fixed top-0 left-0 bg-black/60 w-full min-h-screen overflow-hidden overflow-y-auto flex items-center justify-center ${
+          modalOpen
+            ? "opacity-100 visible z-10 transition duration-1000 ease-linear"
+            : "opacity-0 invisible -z-10 transition ease-in duration-500"
+        }`}
+      >
+        <div className="max-w-[600px] w-full h-auto bg-white shadow-sm shadow-white py-2 px-4 rounded-lg">
+          <div className="header flex items-center justify-between border-b-[1px] mb-2 py-1">
+            <h2>Add Job Experience</h2>
+            <button onClick={() => setModalOpen(false)}>
+              <svg
+                width="20px"
+                height="20px"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM8.96963 8.96965C9.26252 8.67676 9.73739 8.67676 10.0303 8.96965L12 10.9393L13.9696 8.96967C14.2625 8.67678 14.7374 8.67678 15.0303 8.96967C15.3232 9.26256 15.3232 9.73744 15.0303 10.0303L13.0606 12L15.0303 13.9696C15.3232 14.2625 15.3232 14.7374 15.0303 15.0303C14.7374 15.3232 14.2625 15.3232 13.9696 15.0303L12 13.0607L10.0303 15.0303C9.73742 15.3232 9.26254 15.3232 8.96965 15.0303C8.67676 14.7374 8.67676 14.2625 8.96965 13.9697L10.9393 12L8.96963 10.0303C8.67673 9.73742 8.67673 9.26254 8.96963 8.96965Z"
+                  fill="#1C274C"
+                />
+              </svg>
             </button>
-          </form>
+          </div>
+          <div className="content">
+            <form onSubmit={companyHandler}>
+              <div className="flex flex-col border-b-[1px] py-2">
+                <label>Company Name</label>
+                <input
+                  className="border-0 outline-none shadow-none"
+                  type="text"
+                  name="company_name"
+                  placeholder="type your company name"
+                  value={inputs.company_name || ""}
+                  onChange={companyHandleChange}
+                />
+              </div>
+              <div className="flex flex-col border-b-[1px] py-2">
+                <label>Designation</label>
+                <input
+                  className="border-0 outline-none shadow-none"
+                  type="text"
+                  name="designation"
+                  placeholder="type your designation here"
+                  value={inputs.designation || ""}
+                  onChange={companyHandleChange}
+                />
+              </div>
+              <div className="flex flex-col border-b-[1px] py-2">
+                <label>Join Date</label>
+                <input
+                  className="border-0 outline-none shadow-none"
+                  type="date"
+                  name="join_date"
+                  value={inputs.join_date || ""}
+                  onChange={companyHandleChange}
+                />
+              </div>
+
+              <div className="flex flex-col border-b-[1px] py-2">
+                <label>Leave Date</label>
+                <input
+                  className="border-0 outline-none shadow-none"
+                  type={checked ? "text" : "date"}
+                  name="leave_date"
+                  value={checked ? "continue" : inputs.leave_date || ""}
+                  onChange={companyHandleChange}
+                  disabled={checked}
+                />
+              </div>
+              <div className="flex flex-col items-start justify-start border-b-[1px] py-2">
+                <label>Continue</label>
+                <input
+                  className="border-0 outline-none shadow-none"
+                  type="checkbox"
+                  name="continue"
+                  checked={checked}
+                  onChange={companyHandleChange}
+                />
+              </div>
+              <button type="submit">Submit</button>
+            </form>
+
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 };
